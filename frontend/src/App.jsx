@@ -10,6 +10,8 @@ import CandidateDashboard from './pages/dashboard/CandidateDashboard.jsx';
 import SkillsDashboard from './pages/dashboard/SkillsDashboard.jsx';
 import JobsBoard from './pages/dashboard/JobsBoard.jsx';
 import JobDetail from './pages/dashboard/JobDetail.jsx';
+import CandidateApplications from './pages/dashboard/CandidateApplications.jsx';
+import CandidateInterviews from './pages/dashboard/CandidateInterviews.jsx';
 import MentorDashboard from './pages/dashboard/MentorDashboard.jsx';
 import AdminDashboard from './pages/dashboard/AdminDashboard.jsx';
 
@@ -75,6 +77,24 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['candidate']}>
               <JobDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/candidate/applications"
+          element={
+            <ProtectedRoute allowedRoles={['candidate']}>
+              <CandidateApplications />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/candidate/interviews"
+          element={
+            <ProtectedRoute allowedRoles={['candidate']}>
+              <CandidateInterviews />
             </ProtectedRoute>
           }
         />
