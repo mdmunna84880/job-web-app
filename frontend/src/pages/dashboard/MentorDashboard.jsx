@@ -5,6 +5,8 @@ import api, { setAccessToken } from '../../utils/api.js';
 import Button from '../../components/common/Button.jsx';
 import Card from '../../components/common/Card.jsx';
 import { useNavigate } from 'react-router-dom';
+import CompaniesTab from '../../components/dashboard/CompaniesTab.jsx';
+import JobsTab from '../../components/dashboard/JobsTab.jsx';
 import {
   PieChart,
   Pie,
@@ -27,6 +29,7 @@ export default function MentorDashboard() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -101,9 +104,46 @@ export default function MentorDashboard() {
       {/* Main Grid */}
       <main className="flex-1 p-6 md:p-8 max-w-6xl mx-auto w-full flex flex-col gap-6">
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-          <h2 className="text-2xl font-bold text-slate-800">Coach Dashboard</h2>
+          <h2 className="text-2xl font-bold text-slate-800 font-sans">Coach Dashboard</h2>
           <p className="text-sm text-slate-500 mt-1">Review student readiness trackers, applications statuses, and weekly interview schedules.</p>
         </div>
+
+        {/* Tab Switcher */}
+        <div className="flex border-b border-slate-200/80 gap-6 mt-2">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`pb-3.5 text-sm font-bold border-b-2 transition-smooth focus:outline-none cursor-pointer ${
+              activeTab === 'overview'
+                ? 'border-indigo-600 text-indigo-700'
+                : 'border-transparent text-slate-400 hover:text-slate-650'
+            }`}
+          >
+            Overview Analytics
+          </button>
+          <button
+            onClick={() => setActiveTab('companies')}
+            className={`pb-3.5 text-sm font-bold border-b-2 transition-smooth focus:outline-none cursor-pointer ${
+              activeTab === 'companies'
+                ? 'border-indigo-600 text-indigo-700'
+                : 'border-transparent text-slate-400 hover:text-slate-650'
+            }`}
+          >
+            Companies Management
+          </button>
+          <button
+            onClick={() => setActiveTab('jobs')}
+            className={`pb-3.5 text-sm font-bold border-b-2 transition-smooth focus:outline-none cursor-pointer ${
+              activeTab === 'jobs'
+                ? 'border-indigo-600 text-indigo-700'
+                : 'border-transparent text-slate-400 hover:text-slate-650'
+            }`}
+          >
+            Job Openings
+          </button>
+        </div>
+
+        {activeTab === 'overview' && (
+          <>
 
         {/* Counters Grid */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -204,6 +244,11 @@ export default function MentorDashboard() {
             )}
           </Card>
         </section>
+          </>
+        )}
+
+        {activeTab === 'companies' && <CompaniesTab />}
+        {activeTab === 'jobs' && <JobsTab />}
       </main>
     </div>
   );

@@ -12,9 +12,9 @@ router.use(protect); // All routes require authentication
 router.get('/', companyController.getAllCompanies);
 router.get('/:id', companyController.getCompanyById);
 
-// Write/Admin-only endpoints
-router.post('/', restrictTo(USER_ROLE.ADMIN), companyController.createCompany);
-router.put('/:id', restrictTo(USER_ROLE.ADMIN), companyController.updateCompany);
-router.delete('/:id', restrictTo(USER_ROLE.ADMIN), companyController.deleteCompany);
+// Write/Admin & Mentor endpoints
+router.post('/', restrictTo(USER_ROLE.ADMIN, USER_ROLE.MENTOR), companyController.createCompany);
+router.put('/:id', restrictTo(USER_ROLE.ADMIN, USER_ROLE.MENTOR), companyController.updateCompany);
+router.delete('/:id', restrictTo(USER_ROLE.ADMIN, USER_ROLE.MENTOR), companyController.deleteCompany);
 
 export default router;

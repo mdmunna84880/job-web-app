@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { joiResolver } from '@hookform/resolvers/joi';
+import { useSelector } from 'react-redux';
 import { registerSchema } from '../../utils/validationSchemas.js';
 import api from '../../utils/api.js';
 import Card from '../../components/common/Card.jsx';
@@ -11,6 +12,20 @@ import Button from '../../components/common/Button.jsx';
 export default function Register() {
   const navigate = useNavigate();
   const [successMsg, setSuccessMsg] = useState('');
+  const { user, loading } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    // If the user session is already active, direct them to their dashboard
+    if (!loading && user) {
+      if (user.role === 'candidate') {
+        navigate('/dashboard/candidate', { replace: true });
+      } else if (user.role === 'mentor') {
+        navigate('/dashboard/mentor', { replace: true });
+      } else if (user.role === 'admin') {
+        navigate('/dashboard/admin', { replace: true });
+      }
+    }
+  }, [user, loading, navigate]);
 
   const {
     register,
@@ -49,6 +64,17 @@ export default function Register() {
       }
     }
   };
+
+  if (loading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-650 rounded-full animate-spin"></div>
+          <span className="text-sm font-medium text-slate-500 font-sans">Loading session...</span>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4">

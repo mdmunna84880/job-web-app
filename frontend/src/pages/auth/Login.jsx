@@ -1,17 +1,32 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { joiResolver } from '@hookform/resolvers/joi';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { loginSchema } from '../../utils/validationSchemas.js';
 import { setCredentials } from '../../store/slices/authSlice.js';
 import api, { setAccessToken } from '../../utils/api.js';
 import Card from '../../components/common/Card.jsx';
 import Input from '../../components/common/Input.jsx';
 import Button from '../../components/common/Button.jsx';
+import { useEffect } from 'react';
 
 export default function Login() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { user, loading } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    // If the user session is already active, direct them to their dashboard
+    if (!loading && user) {
+      if (user.role === 'candidate') {
+        navigate('/dashboard/candidate', { replace: true });
+      } else if (user.role === 'mentor') {
+        navigate('/dashboard/mentor', { replace: true });
+      } else if (user.role === 'admin') {
+        navigate('/dashboard/admin', { replace: true });
+      }
+    }
+  }, [user, loading, navigate]);
 
   const {
     register,
@@ -61,6 +76,17 @@ export default function Login() {
       }
     }
   };
+
+  if (loading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-650 rounded-full animate-spin"></div>
+          <span className="text-sm font-medium text-slate-500 font-sans">Loading session...</span>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4">

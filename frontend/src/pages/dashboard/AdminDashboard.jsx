@@ -7,6 +7,8 @@ import Button from '../../components/common/Button.jsx';
 import Card from '../../components/common/Card.jsx';
 import Input from '../../components/common/Input.jsx';
 import { useNavigate } from 'react-router-dom';
+import CompaniesTab from '../../components/dashboard/CompaniesTab.jsx';
+import JobsTab from '../../components/dashboard/JobsTab.jsx';
 import {
   PieChart,
   Pie,
@@ -40,6 +42,7 @@ export default function AdminDashboard() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const [activeTab, setActiveTab] = useState('users');
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
@@ -139,6 +142,43 @@ export default function AdminDashboard() {
           <h2 className="text-2xl font-bold text-slate-800 font-sans">System Analytics & Directory</h2>
           <p className="text-sm text-slate-500 mt-1">Manage global user credentials, adjust system roles, and evaluate aggregate performance trends.</p>
         </div>
+
+        {/* Tab Switcher */}
+        <div className="flex border-b border-slate-200/80 gap-6 mt-2">
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`pb-3.5 text-sm font-bold border-b-2 transition-smooth focus:outline-none cursor-pointer ${
+              activeTab === 'users'
+                ? 'border-indigo-650 text-indigo-700'
+                : 'border-transparent text-slate-400 hover:text-slate-650'
+            }`}
+          >
+            Analytics & Users
+          </button>
+          <button
+            onClick={() => setActiveTab('companies')}
+            className={`pb-3.5 text-sm font-bold border-b-2 transition-smooth focus:outline-none cursor-pointer ${
+              activeTab === 'companies'
+                ? 'border-indigo-650 text-indigo-700'
+                : 'border-transparent text-slate-400 hover:text-slate-650'
+            }`}
+          >
+            Companies Management
+          </button>
+          <button
+            onClick={() => setActiveTab('jobs')}
+            className={`pb-3.5 text-sm font-bold border-b-2 transition-smooth focus:outline-none cursor-pointer ${
+              activeTab === 'jobs'
+                ? 'border-indigo-650 text-indigo-700'
+                : 'border-transparent text-slate-400 hover:text-slate-650'
+            }`}
+          >
+            Job Openings
+          </button>
+        </div>
+
+        {activeTab === 'users' && (
+          <>
 
         {/* Counter Cards */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -368,6 +408,11 @@ export default function AdminDashboard() {
             </div>
           )}
         </section>
+          </>
+        )}
+
+        {activeTab === 'companies' && <CompaniesTab />}
+        {activeTab === 'jobs' && <JobsTab />}
       </main>
     </div>
   );

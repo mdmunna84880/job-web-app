@@ -35,6 +35,61 @@ export const fetchJobById = createAsyncThunk(
   }
 );
 
+// Creates a new job posting on the platform
+export const createJob = createAsyncThunk(
+  'jobs/createJob',
+  async (jobData, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/jobs', jobData);
+      return response.data.data;
+    } catch (error) {
+      if (error.response?.status === 400 && error.response.data.errors) {
+        return rejectWithValue({
+          message: error.response.data.message,
+          errors: error.response.data.errors,
+        });
+      }
+      return rejectWithValue({
+        message: error.response?.data?.message || 'Failed to publish job opening.',
+      });
+    }
+  }
+);
+
+// Updates an existing job posting
+export const updateJob = createAsyncThunk(
+  'jobs/updateJob',
+  async ({ id, jobData }, { rejectWithValue }) => {
+    try {
+      const response = await api.put(`/jobs/${id}`, jobData);
+      return response.data.data;
+    } catch (error) {
+      if (error.response?.status === 400 && error.response.data.errors) {
+        return rejectWithValue({
+          message: error.response.data.message,
+          errors: error.response.data.errors,
+        });
+      }
+      return rejectWithValue({
+        message: error.response?.data?.message || 'Failed to update job opening.',
+      });
+    }
+  }
+);
+
+// Deletes a job posting from the database
+export const deleteJob = createAsyncThunk(
+  'jobs/deleteJob',
+  async (id, { rejectWithValue }) => {
+    try {
+      await api.delete(`/jobs/${id}`);
+      return id;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete job opening.');
+    }
+  }
+);
+
 const jobSlice = createSlice({
   name: 'jobs',
   initialState: {
@@ -58,8 +113,13 @@ const jobSlice = createSlice({
     },
     loading: false,
     error: null,
+    submitError: null,
   },
   reducers: {
+    clearJobErrors: (state) => {
+      state.error = null;
+      state.submitError = null;
+    },
     setFilters: (state, action) => {
       state.currentFilters = { ...state.currentFilters, ...action.payload, page: 1 };
     },
@@ -113,10 +173,51 @@ const jobSlice = createSlice({
       .addCase(fetchJobById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      // Create Job
+      .addCase(createJob.pending, (state) => {
+        state.loading = true;
+        state.submitError = null;
+      })
+      .addCase(createJob.fulfilled, (state, action) => {
+        state.jobsList = [action.payload, ...state.jobsList];
+        state.loading = false;
+      })
+      .addCase(createJob.rejected, (state, action) => {
+        state.loading = false;
+        state.submitError = action.payload;
+      })
+      // Update Job
+      .addCase(updateJob.pending, (state) => {
+        state.loading = true;
+        state.submitError = null;
+      })
+      .addCase(updateJob.fulfilled, (state, action) => {
+        state.jobsList = state.jobsList.map((job) =>
+          job._id === action.payload._id ? action.payload : job
+        );
+        state.loading = false;
+      })
+      .addCase(updateJob.rejected, (state, action) => {
+        state.loading = false;
+        state.submitError = action.payload;
+      })
+      // Delete Job
+      .addCase(deleteJob.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteJob.fulfilled, (state, action) => {
+        state.jobsList = state.jobsList.filter((job) => job._id !== action.payload);
+        state.loading = false;
+      })
+      .addCase(deleteJob.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
 
-export const { setFilters, setPage, resetFilters, clearJobsState } = jobSlice.actions;
+export const { setFilters, setPage, resetFilters, clearJobsState, clearJobErrors } = jobSlice.actions;
 
 export default jobSlice.reducer;
