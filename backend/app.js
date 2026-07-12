@@ -14,6 +14,9 @@ import skillRouter from "./features/skills/skill.routes.js";
 import candidateRouter from "./features/candidate/candidate.routes.js";
 import companyRouter from "./features/companies/company.routes.js";
 import jobRouter from "./features/jobs/job.routes.js";
+import applicationRouter from "./features/applications/application.routes.js";
+import interviewRouter from "./features/interviews/interview.routes.js";
+import mentorNoteRouter from "./features/mentor-notes/mentorNote.routes.js";
 
 const app = express();
 
@@ -34,6 +37,9 @@ app.use("/api/skills", skillRouter);
 app.use("/api/candidate", candidateRouter);
 app.use("/api/companies", companyRouter);
 app.use("/api/jobs", jobRouter);
+app.use("/api/applications", applicationRouter);
+app.use("/api/interviews", interviewRouter);
+app.use("/api/mentor-notes", mentorNoteRouter);
 
 // Health check route
 app.get("/", (req, res) => {

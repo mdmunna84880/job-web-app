@@ -1,0 +1,63 @@
+import * as applicationService from './application.service.js';
+import { applyJobSchema, updateStatusSchema } from './application.validator.js';
+import { AppError } from '../../utils/AppError.js';
+
+export const applyJob = async (req, res, next) => {
+  const { error } = applyJobSchema.validate(req.body);
+  if (error) {
+    return next(new AppError(error.details[0].message, 400));
+  }
+
+  const application = await applicationService.applyJob(
+    req.user.id,
+    req.body.jobId,
+    req.body.studentRemarks
+  );
+
+  res.status(201).json({
+    success: true,
+    data: application,
+  });
+};
+
+export const getAllApplications = async (req, res, next) => {
+  const result = await applicationService.getAllApplications(req.user, req.query);
+  res.status(200).json({
+    success: true,
+    data: result.applications,
+    pagination: result.pagination,
+  });
+};
+
+export const getApplicationById = async (req, res, next) => {
+  const application = await applicationService.getApplicationById(req.user, req.params.id);
+  res.status(200).json({
+    success: true,
+    data: application,
+  });
+};
+
+export const updateApplicationStatus = async (req, res, next) => {
+  const { error } = updateStatusSchema.validate(req.body);
+  if (error) {
+    return next(new AppError(error.details[0].message, 400));
+  }
+
+  const application = await applicationService.updateApplicationStatus(
+    req.params.id,
+    req.body.status
+  );
+
+  res.status(200).json({
+    success: true,
+    data: application,
+  });
+};
+
+export const withdrawApplication = async (req, res, next) => {
+  const application = await applicationService.withdrawApplication(req.user.id, req.params.id);
+  res.status(200).json({
+    success: true,
+    data: application,
+  });
+};
