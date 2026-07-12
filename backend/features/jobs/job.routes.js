@@ -12,9 +12,9 @@ router.use(protect); // Ensure all endpoints require authentication
 router.get('/', jobController.getAllJobs);
 router.get('/:id', jobController.getJobById);
 
-// Write/Admin & Mentor endpoints
-router.post('/', restrictTo(USER_ROLE.ADMIN, USER_ROLE.MENTOR), jobController.createJob);
-router.put('/:id', restrictTo(USER_ROLE.ADMIN, USER_ROLE.MENTOR), jobController.updateJob);
-router.delete('/:id', restrictTo(USER_ROLE.ADMIN, USER_ROLE.MENTOR), jobController.deleteJob);
+// Write/Admin, Mentor & Candidate endpoints
+router.post('/', restrictTo(USER_ROLE.ADMIN, USER_ROLE.MENTOR, USER_ROLE.CANDIDATE), jobController.createJob);
+router.put('/:id', restrictTo(USER_ROLE.ADMIN, USER_ROLE.MENTOR, USER_ROLE.CANDIDATE), jobController.updateJob);
+router.delete('/:id', restrictTo(USER_ROLE.ADMIN, USER_ROLE.MENTOR, USER_ROLE.CANDIDATE), jobController.deleteJob);
 
 export default router;

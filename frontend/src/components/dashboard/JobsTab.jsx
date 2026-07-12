@@ -9,6 +9,7 @@ import {
 } from '../../store/slices/jobSlice.js';
 import { fetchCompanies } from '../../store/slices/companySlice.js';
 import { fetchSkillsCatalog } from '../../store/slices/skillsSlice.js';
+import { fetchProfile } from '../../store/slices/candidateSlice.js';
 import Button from '../common/Button.jsx';
 import Card from '../common/Card.jsx';
 import Input from '../common/Input.jsx';
@@ -33,6 +34,8 @@ const JOB_STATUSES = ['Active', 'Closed', 'On Hold'];
 
 export default function JobsTab() {
   const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+  const { profile } = useSelector((state) => state.candidate);
   const { jobsList, loading: jobsLoading, submitError } = useSelector((state) => state.jobs);
   const { companiesList } = useSelector((state) => state.companies);
   const { catalog: skillsCatalog } = useSelector((state) => state.skills);
@@ -63,6 +66,7 @@ export default function JobsTab() {
     dispatch(fetchJobs({ search, status: '' })); // Fetch all jobs regardless of status
     dispatch(fetchCompanies({ limit: 1000 }));
     dispatch(fetchSkillsCatalog());
+    dispatch(fetchProfile());
   }, [dispatch, search]);
 
   useEffect(() => {
@@ -73,15 +77,27 @@ export default function JobsTab() {
     }
   }, [submitError]);
 
+  const allowedCompanies = user?.role === 'admin'
+    ? companiesList
+    : companiesList.filter((c) => (profile?.companies || []).map((p) => p._id || p).includes(c._id));
+
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
   };
 
   const handleOpenCreateModal = () => {
+    if (user && user.role !== 'admin') {
+      const allowed = (profile?.companies || []).map((c) => c._id || c);
+      if (allowed.length === 0) {
+        alert("You must register a company or add associated companies to your profile before you can post a job opening.");
+        return;
+      }
+    }
+
     setEditingJob(null);
     setFormData({
       title: '',
-      companyId: companiesList[0]?._id || '',
+      companyId: allowedCompanies[0]?._id || '',
       location: '',
       workMode: 'On-site',
       jobType: 'Full-Time',
@@ -346,7 +362,7 @@ export default function JobsTab() {
                     }`}
                   >
                     <option value="" disabled>Select Company...</option>
-                    {companiesList.map((comp) => (
+                    {allowedCompanies.map((comp) => (
                       <option key={comp._id} value={comp._id}>
                         {comp.name}
                       </option>

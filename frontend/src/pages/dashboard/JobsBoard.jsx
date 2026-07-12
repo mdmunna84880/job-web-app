@@ -1,12 +1,25 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchJobs, setFilters, setPage, resetFilters } from '../../store/slices/jobSlice.js';
+import { fetchJobs, setFilters, setPage, resetFilters, createJob } from '../../store/slices/jobSlice.js';
 import { fetchSkillsCatalog } from '../../store/slices/skillsSlice.js';
+import { fetchProfile } from '../../store/slices/candidateSlice.js';
+import { fetchCompanies } from '../../store/slices/companySlice.js';
 import CandidateLayout from '../../components/layout/CandidateLayout.jsx';
 import Card from '../../components/common/Card.jsx';
 import Input from '../../components/common/Input.jsx';
 import Button from '../../components/common/Button.jsx';
-import { FiSearch, FiSliders, FiBriefcase, FiMapPin, FiDollarSign, FiAward } from 'react-icons/fi';
+import {
+  FiSearch,
+  FiSliders,
+  FiBriefcase,
+  FiMapPin,
+  FiDollarSign,
+  FiAward,
+  FiPlus,
+  FiX,
+  FiCheckSquare,
+  FiSquare
+} from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 
 export default function JobsBoard() {
@@ -14,16 +27,37 @@ export default function JobsBoard() {
   const navigate = useNavigate();
 
   const { jobsList, pagination, currentFilters, loading } = useSelector((state) => state.jobs);
-  const { catalog } = useSelector((state) => state.skills);
+  const { catalog: skillsCatalog } = useSelector((state) => state.skills);
+  const { profile } = useSelector((state) => state.candidate);
+  const { companiesList } = useSelector((state) => state.companies);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [formData, setFormData] = useState({
+    title: '',
+    companyId: '',
+    location: '',
+    workMode: 'On-site',
+    jobType: 'Full-Time',
+    requiredSkills: [],
+    salaryMin: '',
+    salaryMax: '',
+    eligibilityCriteria: '',
+    deadline: '',
+    status: 'Active',
+    description: '',
+  });
 
   // Fetch jobs list on filters change
   useEffect(() => {
     dispatch(fetchJobs(currentFilters));
   }, [dispatch, currentFilters]);
 
-  // Load available skills catalog for dropdown filters
+  // Load available skills, companies, and candidate profile
   useEffect(() => {
     dispatch(fetchSkillsCatalog());
+    dispatch(fetchProfile());
+    dispatch(fetchCompanies({ limit: 1000 }));
   }, [dispatch]);
 
   const handleFilterChange = (key, value) => {
@@ -33,6 +67,80 @@ export default function JobsBoard() {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
   };
+
+  const handleOpenPostJobModal = () => {
+    // Check if they are associated with any companies in their profile first
+    const candidateCompanies = (profile?.companies || []).map((c) => c._id || c);
+    if (candidateCompanies.length === 0) {
+      alert("You must register a company or add associated companies to your profile before you can post a job opening.");
+      return;
+    }
+
+    // Candidates are expected to be job seekers. Confirm their intent first.
+    if (window.confirm("As a candidate seeking a job, are you sure you want to post a new job opening? Candidates are expected to seek jobs rather than post them.")) {
+      setFormData({
+        title: '',
+        companyId: candidateCompanies[0] || '',
+        location: '',
+        workMode: 'On-site',
+        jobType: 'Full-Time',
+        requiredSkills: [],
+        salaryMin: '',
+        salaryMax: '',
+        eligibilityCriteria: '',
+        deadline: '',
+        status: 'Active',
+        description: '',
+      });
+      setValidationErrors({});
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { id, value } = e.target;
+    setFormData((prev) => ({ ...prev, [id]: value }));
+    if (validationErrors[id]) {
+      setValidationErrors((prev) => ({ ...prev, [id]: null }));
+    }
+  };
+
+  const handleSkillToggle = (skillId) => {
+    setFormData((prev) => {
+      const skills = prev.requiredSkills.includes(skillId)
+        ? prev.requiredSkills.filter((id) => id !== skillId)
+        : [...prev.requiredSkills, skillId];
+      return { ...prev, requiredSkills: skills };
+    });
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    setValidationErrors({});
+
+    const parsedData = {
+      ...formData,
+      salaryMin: formData.salaryMin === '' ? null : Number(formData.salaryMin),
+      salaryMax: formData.salaryMax === '' ? null : Number(formData.salaryMax),
+      deadline: formData.deadline === '' ? null : formData.deadline,
+    };
+
+    const result = await dispatch(createJob(parsedData));
+    if (!result.error) {
+      setIsModalOpen(false);
+      dispatch(fetchJobs(currentFilters));
+      alert('Job posted successfully!');
+    } else {
+      if (result.payload?.errors) {
+        setValidationErrors(result.payload.errors);
+      } else {
+        alert(result.payload?.message || result.error?.message || 'Failed to post job.');
+      }
+    }
+  };
+
+  const candidateCompanies = (profile?.companies || []).map((c) => c._id || c);
+  const allowedCompanies = companiesList.filter((comp) => candidateCompanies.includes(comp._id));
 
   return (
     <CandidateLayout>
@@ -45,6 +153,14 @@ export default function JobsBoard() {
               Search and filter through active job listings matching your skillset.
             </p>
           </div>
+          <Button
+            variant="primary"
+            onClick={handleOpenPostJobModal}
+            className="flex items-center gap-2 font-semibold px-4 py-2 text-sm shrink-0 cursor-pointer"
+          >
+            <FiPlus className="w-4 h-4" />
+            <span>Post a Job</span>
+          </Button>
         </header>
 
         {/* Search & Filter Bar */}
@@ -269,6 +385,219 @@ export default function JobsBoard() {
           </div>
         </section>
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl border border-slate-100 flex flex-col max-h-[90vh] my-8 animate-scale-up">
+            {/* Header */}
+            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800 font-sans">Post a New Job Opening</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Post a job for a company you own or work at</p>
+              </div>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-650 transition-smooth cursor-pointer"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 flex flex-col gap-5 text-left">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Job Title"
+                  id="title"
+                  placeholder="e.g. Senior React Developer"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  error={validationErrors.title}
+                  required
+                />
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="companyId" className="text-sm font-semibold text-slate-700">
+                    Company <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    id="companyId"
+                    value={formData.companyId}
+                    onChange={handleInputChange}
+                    className="px-3 py-2.5 rounded-lg border border-slate-200 bg-white/50 text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-smooth"
+                    required
+                  >
+                    {allowedCompanies.map((c) => (
+                      <option key={c._id} value={c._id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  {validationErrors.companyId && (
+                    <span className="text-xs text-rose-500 font-medium">{validationErrors.companyId}</span>
+                  )}
+                </div>
+
+                <Input
+                  label="Job Location"
+                  id="location"
+                  placeholder="e.g. Bangalore, India"
+                  value={formData.location}
+                  onChange={handleInputChange}
+                  error={validationErrors.location}
+                  required
+                />
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="workMode" className="text-sm font-semibold text-slate-700">
+                    Work Mode <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    id="workMode"
+                    value={formData.workMode}
+                    onChange={handleInputChange}
+                    className="px-3 py-2.5 rounded-lg border border-slate-200 bg-white/50 text-sm focus:outline-none"
+                  >
+                    <option value="On-site">On-site</option>
+                    <option value="Hybrid">Hybrid</option>
+                    <option value="Remote">Remote</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="jobType" className="text-sm font-semibold text-slate-700">
+                    Job Type <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    id="jobType"
+                    value={formData.jobType}
+                    onChange={handleInputChange}
+                    className="px-3 py-2.5 rounded-lg border border-slate-200 bg-white/50 text-sm focus:outline-none"
+                  >
+                    <option value="Full-Time">Full-Time</option>
+                    <option value="Part-Time">Part-Time</option>
+                    <option value="Contract">Contract</option>
+                    <option value="Internship">Internship</option>
+                  </select>
+                </div>
+
+                <Input
+                  label="Deadline"
+                  id="deadline"
+                  type="date"
+                  value={formData.deadline}
+                  onChange={handleInputChange}
+                  error={validationErrors.deadline}
+                />
+
+                <Input
+                  label="Min Salary (Annual / INR)"
+                  id="salaryMin"
+                  type="number"
+                  placeholder="e.g. 600000"
+                  value={formData.salaryMin}
+                  onChange={handleInputChange}
+                  error={validationErrors.salaryMin}
+                />
+
+                <Input
+                  label="Max Salary (Annual / INR)"
+                  id="salaryMax"
+                  type="number"
+                  placeholder="e.g. 1200000"
+                  value={formData.salaryMax}
+                  onChange={handleInputChange}
+                  error={validationErrors.salaryMax}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="eligibilityCriteria" className="text-sm font-semibold text-slate-700">
+                  Eligibility Criteria
+                </label>
+                <input
+                  type="text"
+                  id="eligibilityCriteria"
+                  placeholder="e.g. B.Tech / MCA with 2+ years of experience"
+                  value={formData.eligibilityCriteria}
+                  onChange={handleInputChange}
+                  className="px-3 py-2.5 rounded-lg border border-slate-200 bg-white/50 text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-smooth"
+                />
+                {validationErrors.eligibilityCriteria && (
+                  <span className="text-xs text-rose-500 font-medium">{validationErrors.eligibilityCriteria}</span>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="description" className="text-sm font-semibold text-slate-700">
+                  Job Description <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  id="description"
+                  rows={4}
+                  placeholder="Detailed responsibilities, expectations, etc..."
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  className="px-3 py-2 rounded-lg border border-slate-200 text-sm transition-smooth outline-none bg-white/50 focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+                  required
+                />
+                {validationErrors.description && (
+                  <span className="text-xs text-rose-500 font-medium">{validationErrors.description}</span>
+                )}
+              </div>
+
+              {/* Skills Multi-Select Checklist */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold text-slate-700">
+                  Required Skills <span className="text-rose-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-50/50 p-3 rounded-lg border border-slate-200/60 max-h-40 overflow-y-auto">
+                  {skillsCatalog.map((sk) => {
+                    const isSelected = formData.requiredSkills.includes(sk._id);
+                    return (
+                      <button
+                        type="button"
+                        key={sk._id}
+                        onClick={() => handleSkillToggle(sk._id)}
+                        className={`flex items-center gap-2 p-1.5 text-xs text-left rounded-md font-semibold transition-smooth border cursor-pointer ${
+                          isSelected
+                            ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                            : 'bg-white border-slate-200/80 text-slate-550 hover:bg-slate-50'
+                        }`}
+                      >
+                        {isSelected ? (
+                          <FiCheckSquare className="w-3.5 h-3.5 text-primary-600 shrink-0" />
+                        ) : (
+                          <FiSquare className="w-3.5 h-3.5 text-slate-350 shrink-0" />
+                        )}
+                        <span className="line-clamp-1">{sk.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {validationErrors.requiredSkills && (
+                  <span className="text-xs text-rose-500 font-medium">{validationErrors.requiredSkills}</span>
+                )}
+              </div>
+
+              {/* Footer Buttons */}
+              <div className="flex justify-end gap-3 border-t border-slate-100 pt-4 mt-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 text-sm font-semibold"
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className="px-5 py-2 text-sm font-semibold">
+                  Post Job Opening
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </CandidateLayout>
   );
 }

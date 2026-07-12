@@ -40,6 +40,12 @@ const candidateProfileSchema = new mongoose.Schema(
       min: 0,
       max: 100,
     },
+    companies: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Company',
+      },
+    ],
     readinessStatus: {
       type: String,
       enum: Object.values(READINESS_STATUS),

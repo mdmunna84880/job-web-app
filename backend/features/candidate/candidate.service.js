@@ -39,14 +39,15 @@ export const upsertProfile = async (userId, profileData) => {
       user: userId,
     },
     { returnDocument: 'after', upsert: true, runValidators: true }
-  ).populate('user', 'name email phone role');
+  ).populate('user', 'name email phone role').populate('companies');
 
   return profile;
 };
 
 export const getProfile = async (userId) => {
   const profile = await CandidateProfile.findOne({ user: userId })
-    .populate('user', 'name email phone role');
+    .populate('user', 'name email phone role')
+    .populate('companies');
 
   if (!profile) {
     throw new AppError('Candidate profile not found', 404);

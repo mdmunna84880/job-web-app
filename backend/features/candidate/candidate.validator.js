@@ -24,7 +24,8 @@ export const upsertProfileSchema = Joi.object({
   resumeUrl: Joi.string().uri().allow('', null).trim(),
   linkedinUrl: Joi.string().uri().allow('', null).trim(),
   githubUrl: Joi.string().uri().allow('', null).trim(),
-  preferredRole: Joi.string().valid(...Object.values(PREFERRED_ROLE)).required(),
+  preferredRole: Joi.string().valid(...Object.values(PREFERRED_ROLE)).allow('', null),
+  companies: Joi.array().items(objectIdSchema).default([]),
   readinessStatus: Joi.string().valid(...Object.values(READINESS_STATUS)).default(READINESS_STATUS.NOT_READY),
 });
 

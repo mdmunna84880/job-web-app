@@ -2,13 +2,25 @@ import mongoose from 'mongoose';
 import Job from './job.model.js';
 import Company from '../companies/company.model.js';
 import Skill from '../skills/skill.model.js';
+import CandidateProfile from '../candidate/candidate.model.js';
 import { AppError } from '../../utils/AppError.js';
 import { JOB_STATUS } from '../../shared/constants.js';
 
-export const createJob = async (jobData) => {
+export const createJob = async (jobData, user) => {
   const company = await Company.findById(jobData.companyId);
   if (!company) {
     throw new AppError('Associated company not found', 404);
+  }
+
+  // Enforce company association check for Candidates and Mentors
+  if (user && user.role !== 'admin') {
+    const profile = await CandidateProfile.findOne({ user: user._id });
+    const isLinked = profile && profile.companies && profile.companies.some(
+      (cId) => String(cId) === String(jobData.companyId)
+    );
+    if (!isLinked) {
+      throw new AppError('Candidates and Mentors can only post job openings for companies they are currently associated with in their profiles.', 403);
+    }
   }
 
   const uniqueSkills = [...new Set(jobData.requiredSkills)];
@@ -32,6 +44,7 @@ export const createJob = async (jobData) => {
     deadline: jobData.deadline,
     status: jobData.status,
     description: jobData.description,
+    createdBy: jobData.createdBy,
   };
 
   const job = await Job.create(jobPayload);
@@ -130,16 +143,32 @@ export const getJobById = async (id) => {
   return job;
 };
 
-export const updateJob = async (id, updateData) => {
+export const updateJob = async (id, updateData, user) => {
   const job = await Job.findById(id);
   if (!job) {
     throw new AppError('Job not found', 404);
+  }
+
+  // Enforce candidate and mentor update ownership checks
+  if (user && user.role !== 'admin' && String(job.createdBy) !== String(user._id)) {
+    throw new AppError('You do not have permission to modify this job posting.', 403);
   }
 
   if (updateData.companyId) {
     const company = await Company.findById(updateData.companyId);
     if (!company) {
       throw new AppError('Associated company not found', 404);
+    }
+
+    // Enforce company association check for Candidates and Mentors on updates
+    if (user && user.role !== 'admin') {
+      const profile = await CandidateProfile.findOne({ user: user._id });
+      const isLinked = profile && profile.companies && profile.companies.some(
+        (cId) => String(cId) === String(updateData.companyId)
+      );
+      if (!isLinked) {
+        throw new AppError('Candidates and Mentors can only post job openings for companies they are currently associated with in their profiles.', 403);
+      }
     }
     job.company = updateData.companyId;
   }
@@ -179,10 +208,17 @@ export const updateJob = async (id, updateData) => {
   ]);
 };
 
-export const deleteJob = async (id) => {
-  const deletedJob = await Job.findByIdAndDelete(id);
-  if (!deletedJob) {
+export const deleteJob = async (id, user) => {
+  const job = await Job.findById(id);
+  if (!job) {
     throw new AppError('Job not found', 404);
   }
+
+  // Enforce candidate and mentor delete ownership checks
+  if (user && user.role !== 'admin' && String(job.createdBy) !== String(user._id)) {
+    throw new AppError('You do not have permission to delete this job posting.', 403);
+  }
+
+  const deletedJob = await Job.findByIdAndDelete(id);
   return deletedJob;
 };

@@ -1,4 +1,5 @@
 import Company from './company.model.js';
+import CandidateProfile from '../candidate/candidate.model.js';
 import { AppError } from '../../utils/AppError.js';
 
 export const createCompany = async (companyData) => {
@@ -8,7 +9,18 @@ export const createCompany = async (companyData) => {
   if (existingCompany) {
     throw new AppError('A company with this name already exists', 409);
   }
-  return Company.create(companyData);
+  const company = await Company.create(companyData);
+
+  // Automatically append the company to the creator's profile
+  if (companyData.createdBy) {
+    await CandidateProfile.findOneAndUpdate(
+      { user: companyData.createdBy },
+      { $addToSet: { companies: company._id } },
+      { upsert: true }
+    );
+  }
+
+  return company;
 };
 
 export const getAllCompanies = async (query = {}) => {

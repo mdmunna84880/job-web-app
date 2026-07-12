@@ -3,16 +3,20 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { joiResolver } from '@hookform/resolvers/joi';
 import { fetchProfile, upsertProfile } from '../../store/slices/candidateSlice.js';
+import { fetchCompanies } from '../../store/slices/companySlice.js';
 import { profileSchema } from '../../utils/validationSchemas.js';
 import CandidateLayout from '../../components/layout/CandidateLayout.jsx';
 import Card from '../../components/common/Card.jsx';
 import Input from '../../components/common/Input.jsx';
 import Button from '../../components/common/Button.jsx';
-import { FiPlus, FiTrash2, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiCheckCircle, FiAlertCircle, FiSquare } from 'react-icons/fi';
 
 export default function CandidateDashboard() {
   const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
   const { profile, loading, error } = useSelector((state) => state.candidate);
+  const { companiesList } = useSelector((state) => state.companies);
+  const [selectedCompanies, setSelectedCompanies] = useState([]);
   const [saveSuccess, setSaveSuccess] = useState('');
   const [saveError, setSaveError] = useState('');
 
@@ -21,6 +25,7 @@ export default function CandidateDashboard() {
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: joiResolver(profileSchema),
@@ -52,19 +57,23 @@ export default function CandidateDashboard() {
     name: 'projects',
   });
 
-  // Load profile on load
+  // Load profile and companies catalog on load
   useEffect(() => {
     dispatch(fetchProfile());
+    dispatch(fetchCompanies({ limit: 1000 }));
   }, [dispatch]);
 
-  // Sync profile details with React Hook Form
+  // Sync profile details with React Hook Form and local component state
   useEffect(() => {
     if (profile) {
+      const companyIds = (profile.companies || []).map((c) => c._id || c);
+      setSelectedCompanies(companyIds);
       reset({
         preferredRole: profile.preferredRole || 'Frontend Developer',
         resumeUrl: profile.resumeUrl || '',
         linkedinUrl: profile.linkedinUrl || '',
         githubUrl: profile.githubUrl || '',
+        companies: companyIds,
         education: profile.education || [],
         // Convert array of technologies to comma-separated string for easy UI text entry
         projects: (profile.projects || []).map((p) => ({
@@ -74,6 +83,16 @@ export default function CandidateDashboard() {
       });
     }
   }, [profile, reset]);
+
+  const handleCompanyToggle = (companyId) => {
+    setSelectedCompanies((prev) => {
+      const updated = prev.includes(companyId)
+        ? prev.filter((id) => id !== companyId)
+        : [...prev, companyId];
+      setValue('companies', updated);
+      return updated;
+    });
+  };
 
   const onSubmit = async (data) => {
     setSaveSuccess('');
@@ -206,25 +225,27 @@ export default function CandidateDashboard() {
               Basic Settings
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="preferredRole" className="text-sm font-medium text-slate-700">
-                  Target Role <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  id="preferredRole"
-                  className="px-3 py-2.5 rounded-lg border border-slate-200 bg-white/50 backdrop-blur-sm text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-smooth"
-                  {...register('preferredRole')}
-                >
-                  <option value="Frontend Developer">Frontend Developer</option>
-                  <option value="Backend Developer">Backend Developer</option>
-                  <option value="Full-Stack Developer">Full-Stack Developer</option>
-                  <option value="Data Analyst">Data Analyst</option>
-                  <option value="QA Engineer">QA Engineer</option>
-                </select>
-                {errors.preferredRole && (
-                  <span className="text-xs text-rose-500 font-medium">{errors.preferredRole.message}</span>
-                )}
-              </div>
+              {user?.role === 'candidate' && (
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="preferredRole" className="text-sm font-medium text-slate-700">
+                    Target Role <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    id="preferredRole"
+                    className="px-3 py-2.5 rounded-lg border border-slate-200 bg-white/50 backdrop-blur-sm text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-smooth"
+                    {...register('preferredRole')}
+                  >
+                    <option value="Frontend Developer">Frontend Developer</option>
+                    <option value="Backend Developer">Backend Developer</option>
+                    <option value="Full-Stack Developer">Full-Stack Developer</option>
+                    <option value="Data Analyst">Data Analyst</option>
+                    <option value="QA Engineer">QA Engineer</option>
+                  </select>
+                  {errors.preferredRole && (
+                    <span className="text-xs text-rose-500 font-medium">{errors.preferredRole.message}</span>
+                  )}
+                </div>
+              )}
 
               <Input
                 label="Resume URL (Google Drive / Dropbox)"
@@ -232,6 +253,7 @@ export default function CandidateDashboard() {
                 placeholder="https://drive.google.com/..."
                 error={errors.resumeUrl?.message}
                 {...register('resumeUrl')}
+                className={user?.role !== 'candidate' ? 'md:col-span-2' : ''}
               />
 
               <Input
@@ -249,6 +271,40 @@ export default function CandidateDashboard() {
                 error={errors.githubUrl?.message}
                 {...register('githubUrl')}
               />
+
+              <div className="flex flex-col gap-1.5 md:col-span-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Associated Companies (Where you currently work or have founded)
+                </label>
+                {companiesList.length === 0 ? (
+                  <p className="text-xs text-slate-400">No companies are registered on the platform yet.</p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-50/50 p-3 rounded-lg border border-slate-200/60 max-h-40 overflow-y-auto">
+                    {companiesList.map((comp) => {
+                      const isSelected = selectedCompanies.includes(comp._id);
+                      return (
+                        <button
+                          type="button"
+                          key={comp._id}
+                          onClick={() => handleCompanyToggle(comp._id)}
+                          className={`flex items-center gap-2 p-1.5 text-xs text-left rounded-md font-semibold transition-smooth border cursor-pointer ${
+                            isSelected
+                              ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                              : 'bg-white border-slate-200/80 text-slate-550 hover:bg-slate-50'
+                          }`}
+                        >
+                          {isSelected ? (
+                            <FiCheckCircle className="w-3.5 h-3.5 text-primary-600 shrink-0" />
+                          ) : (
+                            <FiSquare className="w-3.5 h-3.5 text-slate-350 shrink-0" />
+                          )}
+                          <span className="line-clamp-1">{comp.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </Card>
 

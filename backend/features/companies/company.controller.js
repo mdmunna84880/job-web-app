@@ -9,7 +9,10 @@ export const createCompany = async (req, res, next) => {
     return next(err);
   }
 
-  const company = await companyService.createCompany(req.body);
+  const company = await companyService.createCompany({
+    ...req.body,
+    createdBy: req.user._id,
+  });
   res.status(201).json({
     success: true,
     data: company,

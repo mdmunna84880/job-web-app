@@ -51,11 +51,11 @@ export const profileSchema = Joi.object({
       'Data Analyst',
       'QA Engineer'
     )
-    .required()
+    .allow('', null)
     .messages({
       'any.only': 'Please select a valid preferred role.',
-      'any.required': 'Preferred role is required.',
     }),
+  companies: Joi.array().items(Joi.string()).default([]),
   resumeUrl: Joi.string().uri().allow('').messages({
     'string.uri': 'Please enter a valid URL (including https://).',
   }),
