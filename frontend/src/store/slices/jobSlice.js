@@ -22,10 +22,24 @@ export const fetchJobs = createAsyncThunk(
   }
 );
 
+// Fetches details of a single job opening
+export const fetchJobById = createAsyncThunk(
+  'jobs/fetchJobById',
+  async (jobId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/jobs/${jobId}`);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to retrieve job details.');
+    }
+  }
+);
+
 const jobSlice = createSlice({
   name: 'jobs',
   initialState: {
     jobsList: [],
+    selectedJob: null,
     pagination: {
       total: 0,
       page: 1,
@@ -66,6 +80,7 @@ const jobSlice = createSlice({
     },
     clearJobsState: (state) => {
       state.jobsList = [];
+      state.selectedJob = null;
       state.pagination = { total: 0, page: 1, limit: 10, pages: 1 };
       state.loading = false;
       state.error = null;
@@ -83,6 +98,19 @@ const jobSlice = createSlice({
         state.loading = false;
       })
       .addCase(fetchJobs.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Fetch Job By Id
+      .addCase(fetchJobById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchJobById.fulfilled, (state, action) => {
+        state.selectedJob = action.payload;
+        state.loading = false;
+      })
+      .addCase(fetchJobById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

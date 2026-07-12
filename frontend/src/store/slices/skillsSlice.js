@@ -40,6 +40,19 @@ export const fetchGapAnalysis = createAsyncThunk(
   }
 );
 
+// Fetch skill gap analysis for a specific job from /candidate/skills/gap/job/:jobId
+export const fetchJobGapAnalysis = createAsyncThunk(
+  'skills/fetchJobGapAnalysis',
+  async (jobId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/candidate/skills/gap/job/${jobId}`);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to load job gap analysis.');
+    }
+  }
+);
+
 // Add or update candidate skill rating
 export const rateSkill = createAsyncThunk(
   'skills/rateSkill',
@@ -78,6 +91,7 @@ const skillsSlice = createSlice({
     catalog: [],
     candidateSkills: [],
     gapAnalysis: null,
+    jobGapAnalysis: null,
     loading: false,
     error: null,
   },
@@ -86,6 +100,7 @@ const skillsSlice = createSlice({
       state.catalog = [];
       state.candidateSkills = [];
       state.gapAnalysis = null;
+      state.jobGapAnalysis = null;
       state.loading = false;
       state.error = null;
     },
@@ -118,6 +133,10 @@ const skillsSlice = createSlice({
       // Fetch Gaps
       .addCase(fetchGapAnalysis.fulfilled, (state, action) => {
         state.gapAnalysis = action.payload;
+      })
+      // Fetch Job Gaps
+      .addCase(fetchJobGapAnalysis.fulfilled, (state, action) => {
+        state.jobGapAnalysis = action.payload;
       });
   },
 });
