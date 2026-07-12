@@ -22,25 +22,39 @@ import adminRouter from "./features/admin/admin.routes.js";
 
 const app = express();
 
-// Incoming request middleware
+// ─── CORS ────────────────────────────────────────────────────────────────────
+// Must be FIRST — before helmet, before any other middleware
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : ['http://localhost:5173', 'http://localhost:3000'];
+  : [];
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (e.g. mobile apps, curl, Postman)
+    // Allow server-to-server / Postman requests (no Origin header)
     if (!origin) return callback(null, true);
+    // If no allowlist configured, allow all (open during development)
+    if (allowedOrigins.length === 0) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error(`CORS: Origin ${origin} not allowed`));
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
-app.use(helmet());
+
+// Handle preflight OPTIONS for all routes
+app.options('*', cors());
+
+// ─── Other middleware ─────────────────────────────────────────────────────────
+// Configure helmet so it doesn't override CORS headers
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 app.use(morgan('dev'));
 app.use(limiter);
 app.use(express.json());
 app.use(cookieParser());
+
 
 // Routes
 app.use("/api/auth", authRouter);

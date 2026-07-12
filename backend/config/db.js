@@ -1,14 +1,30 @@
 import mongoose from "mongoose";
+import dns from "dns";
 import { env } from "./env.js";
 
-const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(env.MONGO_URI)
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+// Force IPv4 DNS to avoid SRV record issues on some networks
+dns.setDefaultResultOrder("ipv4first");
+
+const connectDB = async (retries = 5, delay = 3000) => {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const conn = await mongoose.connect(env.MONGO_URI, {
+        serverSelectionTimeoutMS: 10000,
+        connectTimeoutMS: 10000,
+      });
+      console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+      return;
     } catch (error) {
-    console.error(`Error: ${error.message}`);
-    process.exit(1);
+      console.error(`❌ MongoDB connection attempt ${attempt}/${retries} failed: ${error.message}`);
+      if (attempt < retries) {
+        console.log(`⏳ Retrying in ${delay / 1000}s...`);
+        await new Promise((res) => setTimeout(res, delay));
+        delay *= 2; // exponential backoff
+      } else {
+        console.error("🚨 All MongoDB connection attempts failed. Server running without DB.");
+      }
+    }
   }
 };
 
-export default connectDB;
+export default connectDB;
