@@ -10,6 +10,8 @@ import limiter from "./utils/RateLimiter.js";
 
 // Feature Routers
 import authRouter from "./features/auth/auth.routes.js";
+import skillRouter from "./features/skills/skill.routes.js";
+import candidateRouter from "./features/candidate/candidate.routes.js";
 
 const app = express();
 
@@ -26,13 +28,15 @@ app.use(cookieParser());
 
 // Routes
 app.use("/api/auth", authRouter);
+app.use("/api/skills", skillRouter);
+app.use("/api/candidate", candidateRouter);
 
 // Health check route
 app.get("/", (req, res) => {
   res.status(200).json({ status: "success", message: "Server is healthy" });
 });
 
-// 404 error handling middleware (must come before the global error handler!)
+// 404 error handling middleware
 app.use((req, res, next) => {
   next(new AppError("Route not found", 404));
 });
