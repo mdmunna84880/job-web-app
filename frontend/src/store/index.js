@@ -5,6 +5,7 @@ import skillsReducer from './slices/skillsSlice.js';
 import jobReducer from './slices/jobSlice.js';
 import applicationReducer from './slices/applicationSlice.js';
 import interviewReducer from './slices/interviewSlice.js';
+import adminReducer from './slices/adminSlice.js';
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     jobs: jobReducer,
     applications: applicationReducer,
     interviews: interviewReducer,
+    admin: adminReducer,
   },
   devTools: import.meta.env.NODE_ENV !== 'production',
 });
