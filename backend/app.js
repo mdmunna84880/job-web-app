@@ -12,6 +12,8 @@ import limiter from "./utils/RateLimiter.js";
 import authRouter from "./features/auth/auth.routes.js";
 import skillRouter from "./features/skills/skill.routes.js";
 import candidateRouter from "./features/candidate/candidate.routes.js";
+import companyRouter from "./features/companies/company.routes.js";
+import jobRouter from "./features/jobs/job.routes.js";
 
 const app = express();
 
@@ -30,6 +32,8 @@ app.use(cookieParser());
 app.use("/api/auth", authRouter);
 app.use("/api/skills", skillRouter);
 app.use("/api/candidate", candidateRouter);
+app.use("/api/companies", companyRouter);
+app.use("/api/jobs", jobRouter);
 
 // Health check route
 app.get("/", (req, res) => {
