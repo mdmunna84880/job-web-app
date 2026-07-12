@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { store } from '../store/index.js';
+import { setCredentials, clearCredentials } from '../store/slices/authSlice.js';
 
 // Configure default base parameters for the server connection
 const api = axios.create({
@@ -42,12 +44,13 @@ api.interceptors.response.use(
 
         const newToken = refreshResponse.data.token;
         setAccessToken(newToken);
+        store.dispatch(setCredentials({ token: newToken }));
 
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
       } catch (refreshError) {
         setAccessToken('');
-        // Return rejection to let client handle redirection to login
+        store.dispatch(clearCredentials());
         return Promise.reject(refreshError);
       }
     }
