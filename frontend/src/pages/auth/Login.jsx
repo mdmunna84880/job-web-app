@@ -1,56 +1,64 @@
-import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext.jsx';
+import { useForm } from 'react-hook-form';
+import { joiResolver } from '@hookform/resolvers/joi';
+import { useDispatch } from 'react-redux';
+import { loginSchema } from '../../utils/validationSchemas.js';
+import { setCredentials } from '../../store/slices/authSlice.js';
+import api, { setAccessToken } from '../../utils/api.js';
 import Card from '../../components/common/Card.jsx';
 import Input from '../../components/common/Input.jsx';
 import Button from '../../components/common/Button.jsx';
 
 export default function Login() {
-  const { login } = useAuth();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: joiResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
   });
 
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-
-  const handleChange = (e) => {
-    const { id, value } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
-    if (errors[id]) {
-      setErrors((prev) => ({ ...prev, [id]: null }));
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrors({});
-    setLoading(true);
-
+  const onSubmit = async (data) => {
     try {
-      const user = await login(formData.email, formData.password);
+      const response = await api.post('/auth/login', data);
+      const { token, data: payload } = response.data;
       
-      // Redirect based on user role
-      if (user.role === 'candidate') {
+      // Save access token in memory
+      setAccessToken(token);
+      
+      // Update global Redux state
+      dispatch(setCredentials({ user: payload.user, token }));
+
+      // Redirect based on role
+      if (payload.user.role === 'candidate') {
         navigate('/dashboard/candidate');
-      } else if (user.role === 'mentor') {
+      } else if (payload.user.role === 'mentor') {
         navigate('/dashboard/mentor');
-      } else if (user.role === 'admin') {
+      } else if (payload.user.role === 'admin') {
         navigate('/dashboard/admin');
       } else {
         navigate('/');
       }
     } catch (err) {
       if (err.response?.status === 400 && err.response.data.errors) {
-        setErrors(err.response.data.errors);
+        const backendErrors = err.response.data.errors;
+        Object.keys(backendErrors).forEach((field) => {
+          setError(field, { type: 'server', message: backendErrors[field] });
+        });
       } else {
-        setErrors({ global: err.response?.data?.message || 'Invalid email or password.' });
+        setError('root', {
+          type: 'server',
+          message: err.response?.data?.message || 'Invalid email or password.',
+        });
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -66,22 +74,21 @@ export default function Login() {
           </p>
         </div>
 
-        {errors.global && (
-          <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium rounded-lg">
-            {errors.global}
+        {errors.root && (
+          <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium rounded-lg" role="alert">
+            {errors.root.message}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <Input
             label="Email Address"
             id="email"
             type="email"
             placeholder="john@example.com"
             required
-            value={formData.email}
-            onChange={handleChange}
-            error={errors.email}
+            error={errors.email?.message}
+            {...register('email')}
           />
 
           <Input
@@ -90,13 +97,12 @@ export default function Login() {
             type="password"
             placeholder="••••••••"
             required
-            value={formData.password}
-            onChange={handleChange}
-            error={errors.password}
+            error={errors.password?.message}
+            {...register('password')}
           />
 
-          <Button type="submit" disabled={loading} className="mt-2 w-full">
-            {loading ? 'Logging in...' : 'Log In'}
+          <Button type="submit" disabled={isSubmitting} className="mt-2 w-full">
+            {isSubmitting ? 'Logging in...' : 'Log In'}
           </Button>
         </form>
 

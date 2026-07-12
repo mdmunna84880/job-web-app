@@ -1,22 +1,34 @@
-import { useAuth } from '../../context/AuthContext.jsx';
+import { useSelector, useDispatch } from 'react-redux';
+import { clearCredentials } from '../../store/slices/authSlice.js';
+import api, { setAccessToken } from '../../utils/api.js';
 import Button from '../../components/common/Button.jsx';
 
 export default function CandidateDashboard() {
-  const { user, logout } = useAuth();
+  const { user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } finally {
+      setAccessToken('');
+      dispatch(clearCredentials());
+    }
+  };
 
   return (
     <main className="min-h-screen p-8 bg-slate-50">
       <div className="max-w-4xl mx-auto flex flex-col gap-6">
         <header className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Candidate Dashboard</h1>
-            <p className="text-sm text-slate-500">Welcome, {user?.name}</p>
+            <h1 className="text-2xl font-bold text-slate-800 font-sans">Candidate Dashboard</h1>
+            <p className="text-sm text-slate-500 mt-1">Welcome back, {user?.name}</p>
           </div>
-          <Button variant="secondary" onClick={logout}>Log Out</Button>
+          <Button variant="secondary" onClick={handleLogout}>Log Out</Button>
         </header>
 
         <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <p className="text-slate-600">Candidate portal content will be added in Phase 2.</p>
+          <p className="text-slate-600">Candidate portal content will be added in Phase 5.</p>
         </section>
       </div>
     </main>
