@@ -42,8 +42,9 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Handle preflight OPTIONS for all routes
-app.options('*', cors());
+// Handle preflight OPTIONS for all routes (Express 5 requires regex, not '*')
+app.options(/(.*)/,  cors());
+
 
 // ─── Other middleware ─────────────────────────────────────────────────────────
 // Configure helmet so it doesn't override CORS headers
