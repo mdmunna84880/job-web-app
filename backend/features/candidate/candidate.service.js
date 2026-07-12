@@ -3,7 +3,7 @@ import CandidateProfile from './candidate.model.js';
 import CandidateSkill from './candidateSkill.model.js';
 import Skill from '../skills/skill.model.js';
 import { AppError } from '../../utils/AppError.js';
-import { PREFERRED_ROLE } from '../../shared/constants.js';
+import { PREFERRED_ROLE, SKILL_LEVEL } from '../../shared/constants.js';
 
 // Dynamically compute profile completion percentage
 const calculateCompletionScore = (data) => {
@@ -129,7 +129,7 @@ export const calculateSkillGapForRole = async (userId) => {
       missingSkills.push(skillName);
     } else {
       const level = candidateSkillMap.get(key);
-      if (level === 'Beginner' || level === 'Intermediate') {
+      if (level === SKILL_LEVEL.BEGINNER || level === SKILL_LEVEL.INTERMEDIATE) {
         needsImprovement.push({ name: skillName, currentLevel: level });
       } else {
         proficientSkills.push({ name: skillName, currentLevel: level });
@@ -179,7 +179,7 @@ export const calculateSkillGapForJob = async (userId, jobId) => {
       missingSkills.push(skillName);
     } else {
       const level = candidateSkillMap.get(key);
-      if (level === 'Beginner' || level === 'Intermediate') {
+      if (level === SKILL_LEVEL.BEGINNER || level === SKILL_LEVEL.INTERMEDIATE) {
         needsImprovement.push({ name: skillName, currentLevel: level });
       } else {
         proficientSkills.push({ name: skillName, currentLevel: level });

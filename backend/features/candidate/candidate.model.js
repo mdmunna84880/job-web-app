@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { PREFERRED_ROLE } from '../../shared/constants.js';
+import { PREFERRED_ROLE, READINESS_STATUS } from '../../shared/constants.js';
 
 const educationSchema = new mongoose.Schema({
   institution: { type: String, required: true, trim: true },
@@ -42,8 +42,8 @@ const candidateProfileSchema = new mongoose.Schema(
     },
     readinessStatus: {
       type: String,
-      enum: ['Not Ready', 'Placement Ready'],
-      default: 'Not Ready',
+      enum: Object.values(READINESS_STATUS),
+      default: READINESS_STATUS.NOT_READY,
     },
   },
   { timestamps: true }

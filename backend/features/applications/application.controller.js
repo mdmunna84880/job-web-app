@@ -1,11 +1,12 @@
 import * as applicationService from './application.service.js';
 import { applyJobSchema, updateStatusSchema } from './application.validator.js';
-import { AppError } from '../../utils/AppError.js';
+import { validateSchema } from '../../utils/validatorHelper.js';
 
 export const applyJob = async (req, res, next) => {
-  const { error } = applyJobSchema.validate(req.body);
-  if (error) {
-    return next(new AppError(error.details[0].message, 400));
+  try {
+    req.body = validateSchema(applyJobSchema, req.body);
+  } catch (err) {
+    return next(err);
   }
 
   const application = await applicationService.applyJob(
@@ -38,9 +39,10 @@ export const getApplicationById = async (req, res, next) => {
 };
 
 export const updateApplicationStatus = async (req, res, next) => {
-  const { error } = updateStatusSchema.validate(req.body);
-  if (error) {
-    return next(new AppError(error.details[0].message, 400));
+  try {
+    req.body = validateSchema(updateStatusSchema, req.body);
+  } catch (err) {
+    return next(err);
   }
 
   const application = await applicationService.updateApplicationStatus(

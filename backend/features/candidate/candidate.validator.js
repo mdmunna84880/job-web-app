@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { PREFERRED_ROLE, SKILL_LEVEL } from '../../shared/constants.js';
+import { PREFERRED_ROLE, SKILL_LEVEL, READINESS_STATUS } from '../../shared/constants.js';
 import { objectIdSchema } from '../../shared/validators/common.js';
 
 const educationItemSchema = Joi.object({
@@ -25,7 +25,7 @@ export const upsertProfileSchema = Joi.object({
   linkedinUrl: Joi.string().uri().allow('', null).trim(),
   githubUrl: Joi.string().uri().allow('', null).trim(),
   preferredRole: Joi.string().valid(...Object.values(PREFERRED_ROLE)).required(),
-  readinessStatus: Joi.string().valid('Not Ready', 'Placement Ready').default('Not Ready'),
+  readinessStatus: Joi.string().valid(...Object.values(READINESS_STATUS)).default(READINESS_STATUS.NOT_READY),
 });
 
 export const candidateSkillSchema = Joi.object({

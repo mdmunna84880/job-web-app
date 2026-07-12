@@ -1,11 +1,12 @@
 import * as interviewService from './interview.service.js';
 import { createInterviewSchema, updateInterviewSchema } from './interview.validator.js';
-import { AppError } from '../../utils/AppError.js';
+import { validateSchema } from '../../utils/validatorHelper.js';
 
 export const createInterview = async (req, res, next) => {
-  const { error } = createInterviewSchema.validate(req.body);
-  if (error) {
-    return next(new AppError(error.details[0].message, 400));
+  try {
+    req.body = validateSchema(createInterviewSchema, req.body);
+  } catch (err) {
+    return next(err);
   }
 
   const interview = await interviewService.createInterview(req.body);
@@ -33,9 +34,10 @@ export const getInterviewHistory = async (req, res, next) => {
 };
 
 export const updateInterview = async (req, res, next) => {
-  const { error } = updateInterviewSchema.validate(req.body);
-  if (error) {
-    return next(new AppError(error.details[0].message, 400));
+  try {
+    req.body = validateSchema(updateInterviewSchema, req.body);
+  } catch (err) {
+    return next(err);
   }
 
   const interview = await interviewService.updateInterview(req.params.id, req.body);

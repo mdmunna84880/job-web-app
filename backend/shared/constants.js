@@ -84,3 +84,14 @@ export const PREFERRED_ROLE = Object.freeze({
   DATA_ANALYST: 'Data Analyst',
   QA_ENGINEER: 'QA Engineer',
 });
+
+export const READINESS_STATUS = Object.freeze({
+  NOT_READY: 'Not Ready',
+  PLACEMENT_READY: 'Placement Ready',
+});
+
+export const MENTOR_NOTE_TYPE = Object.freeze({
+  GENERAL: 'General',
+  APPLICATION: 'Application',
+  SKILL: 'Skill',
+});

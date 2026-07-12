@@ -1,6 +1,6 @@
 import * as adminService from './admin.service.js';
 import { updateUserRoleSchema } from './admin.validator.js';
-import { AppError } from '../../utils/AppError.js';
+import { validateSchema } from '../../utils/validatorHelper.js';
 
 export const listAllUsers = async (req, res, next) => {
   const result = await adminService.listAllUsers(req.query);
@@ -20,9 +20,10 @@ export const toggleUserStatus = async (req, res, next) => {
 };
 
 export const updateUserRole = async (req, res, next) => {
-  const { error } = updateUserRoleSchema.validate(req.body);
-  if (error) {
-    return next(new AppError(error.details[0].message, 400));
+  try {
+    req.body = validateSchema(updateUserRoleSchema, req.body);
+  } catch (err) {
+    return next(err);
   }
 
   const user = await adminService.updateUserRole(req.params.id, req.user.id, req.body.role);

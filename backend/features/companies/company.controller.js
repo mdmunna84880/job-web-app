@@ -1,11 +1,12 @@
 import * as companyService from './company.service.js';
 import { createCompanySchema, updateCompanySchema } from './company.validator.js';
-import { AppError } from '../../utils/AppError.js';
+import { validateSchema } from '../../utils/validatorHelper.js';
 
 export const createCompany = async (req, res, next) => {
-  const { error } = createCompanySchema.validate(req.body);
-  if (error) {
-    return next(new AppError(error.details[0].message, 400));
+  try {
+    req.body = validateSchema(createCompanySchema, req.body);
+  } catch (err) {
+    return next(err);
   }
 
   const company = await companyService.createCompany(req.body);
@@ -33,9 +34,10 @@ export const getCompanyById = async (req, res, next) => {
 };
 
 export const updateCompany = async (req, res, next) => {
-  const { error } = updateCompanySchema.validate(req.body);
-  if (error) {
-    return next(new AppError(error.details[0].message, 400));
+  try {
+    req.body = validateSchema(updateCompanySchema, req.body);
+  } catch (err) {
+    return next(err);
   }
 
   const company = await companyService.updateCompany(req.params.id, req.body);

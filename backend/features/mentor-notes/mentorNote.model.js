@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { MENTOR_NOTE_TYPE } from '../../shared/constants.js';
 
 const mentorNoteSchema = new mongoose.Schema(
   {
@@ -19,8 +20,8 @@ const mentorNoteSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['General', 'Application', 'Skill'],
-      default: 'General',
+      enum: Object.values(MENTOR_NOTE_TYPE),
+      default: MENTOR_NOTE_TYPE.GENERAL,
     },
     application: {
       type: mongoose.Schema.Types.ObjectId,

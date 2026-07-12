@@ -1,11 +1,12 @@
 import * as skillService from './skill.service.js';
 import { createSkillSchema, updateSkillSchema } from './skill.validator.js';
-import { AppError } from '../../utils/AppError.js';
+import { validateSchema } from '../../utils/validatorHelper.js';
 
 export const createSkill = async (req, res, next) => {
-  const { error } = createSkillSchema.validate(req.body);
-  if (error) {
-    return next(new AppError(error.details[0].message, 400));
+  try {
+    req.body = validateSchema(createSkillSchema, req.body);
+  } catch (err) {
+    return next(err);
   }
 
   const skill = await skillService.createSkill(req.body);
@@ -25,9 +26,10 @@ export const getAllSkills = async (req, res, next) => {
 };
 
 export const updateSkill = async (req, res, next) => {
-  const { error } = updateSkillSchema.validate(req.body);
-  if (error) {
-    return next(new AppError(error.details[0].message, 400));
+  try {
+    req.body = validateSchema(updateSkillSchema, req.body);
+  } catch (err) {
+    return next(err);
   }
 
   const skill = await skillService.updateSkill(req.params.id, req.body);

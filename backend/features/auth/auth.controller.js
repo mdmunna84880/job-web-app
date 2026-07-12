@@ -1,7 +1,7 @@
 import * as authService from './auth.service.js';
 import { registerSchema, loginSchema } from './auth.validator.js';
-import { AppError } from '../../utils/AppError.js';
 import { env } from '../../config/env.js';
+import { validateSchema } from '../../utils/validatorHelper.js';
 
 // Cookie settings for secure httpOnly tokens
 const cookieOptions = {
@@ -13,13 +13,10 @@ const cookieOptions = {
 
 // Register a new Candidate/User
 export const registerUser = async (req, res, next) => {
-  const { error } = registerSchema.validate(req.body, { abortEarly: false });
-  if (error) {
-    const validationErrors = {};
-    error.details.forEach((detail) => {
-      validationErrors[detail.path[0]] = detail.message;
-    });
-    return next(new AppError('Validation failed', 400, validationErrors));
+  try {
+    req.body = validateSchema(registerSchema, req.body);
+  } catch (err) {
+    return next(err);
   }
 
   const user = await authService.register(req.body);
@@ -33,13 +30,10 @@ export const registerUser = async (req, res, next) => {
 
 // Login a user
 export const loginUser = async (req, res, next) => {
-  const { error } = loginSchema.validate(req.body, { abortEarly: false });
-  if (error) {
-    const validationErrors = {};
-    error.details.forEach((detail) => {
-      validationErrors[detail.path[0]] = detail.message;
-    });
-    return next(new AppError('Validation failed', 400, validationErrors));
+  try {
+    req.body = validateSchema(loginSchema, req.body);
+  } catch (err) {
+    return next(err);
   }
 
   const { email, password } = req.body;

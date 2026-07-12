@@ -1,11 +1,12 @@
 import * as candidateService from './candidate.service.js';
 import { upsertProfileSchema, candidateSkillSchema } from './candidate.validator.js';
-import { AppError } from '../../utils/AppError.js';
+import { validateSchema } from '../../utils/validatorHelper.js';
 
 export const upsertProfile = async (req, res, next) => {
-  const { error } = upsertProfileSchema.validate(req.body);
-  if (error) {
-    return next(new AppError(error.details[0].message, 400));
+  try {
+    req.body = validateSchema(upsertProfileSchema, req.body);
+  } catch (err) {
+    return next(err);
   }
 
   const profile = await candidateService.upsertProfile(req.user.id, req.body);
@@ -32,9 +33,10 @@ export const getProfileById = async (req, res, next) => {
 };
 
 export const addOrUpdateSkill = async (req, res, next) => {
-  const { error } = candidateSkillSchema.validate(req.body);
-  if (error) {
-    return next(new AppError(error.details[0].message, 400));
+  try {
+    req.body = validateSchema(candidateSkillSchema, req.body);
+  } catch (err) {
+    return next(err);
   }
 
   const rating = await candidateService.addOrUpdateSkill(

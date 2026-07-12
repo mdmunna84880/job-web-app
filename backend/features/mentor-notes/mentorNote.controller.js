@@ -1,11 +1,12 @@
 import * as mentorNoteService from './mentorNote.service.js';
 import { createNoteSchema, updateNoteSchema } from './mentorNote.validator.js';
-import { AppError } from '../../utils/AppError.js';
+import { validateSchema } from '../../utils/validatorHelper.js';
 
 export const createNote = async (req, res, next) => {
-  const { error } = createNoteSchema.validate(req.body);
-  if (error) {
-    return next(new AppError(error.details[0].message, 400));
+  try {
+    req.body = validateSchema(createNoteSchema, req.body);
+  } catch (err) {
+    return next(err);
   }
 
   const note = await mentorNoteService.createNote(req.user.id, req.body);
@@ -25,9 +26,10 @@ export const getCandidateNotes = async (req, res, next) => {
 };
 
 export const updateNote = async (req, res, next) => {
-  const { error } = updateNoteSchema.validate(req.body);
-  if (error) {
-    return next(new AppError(error.details[0].message, 400));
+  try {
+    req.body = validateSchema(updateNoteSchema, req.body);
+  } catch (err) {
+    return next(err);
   }
 
   const note = await mentorNoteService.updateNote(req.params.id, req.user.id, req.body.text);

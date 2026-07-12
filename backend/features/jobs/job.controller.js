@@ -1,11 +1,12 @@
 import * as jobService from './job.service.js';
 import { createJobSchema, updateJobSchema } from './job.validator.js';
-import { AppError } from '../../utils/AppError.js';
+import { validateSchema } from '../../utils/validatorHelper.js';
 
 export const createJob = async (req, res, next) => {
-  const { error } = createJobSchema.validate(req.body);
-  if (error) {
-    return next(new AppError(error.details[0].message, 400));
+  try {
+    req.body = validateSchema(createJobSchema, req.body);
+  } catch (err) {
+    return next(err);
   }
 
   const job = await jobService.createJob(req.body);
@@ -33,9 +34,10 @@ export const getJobById = async (req, res, next) => {
 };
 
 export const updateJob = async (req, res, next) => {
-  const { error } = updateJobSchema.validate(req.body);
-  if (error) {
-    return next(new AppError(error.details[0].message, 400));
+  try {
+    req.body = validateSchema(updateJobSchema, req.body);
+  } catch (err) {
+    return next(err);
   }
 
   const job = await jobService.updateJob(req.params.id, req.body);

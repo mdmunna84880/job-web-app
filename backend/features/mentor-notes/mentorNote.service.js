@@ -3,7 +3,7 @@ import User from '../auth/auth.model.js';
 import Application from '../applications/application.model.js';
 import Skill from '../skills/skill.model.js';
 import { AppError } from '../../utils/AppError.js';
-import { USER_ROLE } from '../../shared/constants.js';
+import { USER_ROLE, MENTOR_NOTE_TYPE } from '../../shared/constants.js';
 
 export const createNote = async (mentorId, noteData) => {
   const candidate = await User.findById(noteData.candidateId);
@@ -18,7 +18,7 @@ export const createNote = async (mentorId, noteData) => {
     type: noteData.type,
   };
 
-  if (noteData.type === 'Application') {
+  if (noteData.type === MENTOR_NOTE_TYPE.APPLICATION) {
     const application = await Application.findById(noteData.applicationId);
     if (!application) {
       throw new AppError('Associated application not found', 404);
@@ -26,7 +26,7 @@ export const createNote = async (mentorId, noteData) => {
     notePayload.application = noteData.applicationId;
   }
 
-  if (noteData.type === 'Skill') {
+  if (noteData.type === MENTOR_NOTE_TYPE.SKILL) {
     const skill = await Skill.findById(noteData.skillId);
     if (!skill) {
       throw new AppError('Associated master skill not found', 404);
