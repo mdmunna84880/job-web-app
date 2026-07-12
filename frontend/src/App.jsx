@@ -23,7 +23,7 @@ export default function App() {
       try {
         // Run silent refresh to load session token on startup
         const refreshResponse = await api.post('/auth/refresh');
-        const { token } = refreshResponse.data;
+        const { token } = refreshResponse.data.data;
         setAccessToken(token);
 
         // Fetch user profile info

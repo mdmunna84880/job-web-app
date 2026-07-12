@@ -2,89 +2,58 @@ import * as authService from './auth.service.js';
 import { registerSchema, loginSchema } from './auth.validator.js';
 import { env } from '../../config/env.js';
 import { validateSchema } from '../../utils/validatorHelper.js';
+import { AppError } from '../../utils/AppError.js';
 
-// Cookie settings for secure httpOnly tokens
+// sameSite 'none' is required when the frontend and backend run on different origins.
+// 'lax' blocks cross-site cookies, which breaks the refresh flow on Render.
 const cookieOptions = {
   httpOnly: true,
   secure: env.NODE_ENV === 'production',
-  sameSite: 'lax',
+  sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
-// Register a new Candidate/User
-export const registerUser = async (req, res, next) => {
-  try {
-    req.body = validateSchema(registerSchema, req.body);
-  } catch (err) {
-    return next(err);
-  }
-
+export const registerUser = async (req, res) => {
+  req.body = validateSchema(registerSchema, req.body);
   const user = await authService.register(req.body);
-
   res.status(201).json({
     success: true,
     message: 'User registered successfully',
     data: { user },
   });
-}
+};
 
-// Login a user
-export const loginUser = async (req, res, next) => {
-  try {
-    req.body = validateSchema(loginSchema, req.body);
-  } catch (err) {
-    return next(err);
-  }
+export const loginUser = async (req, res) => {
+  req.body = validateSchema(loginSchema, req.body);
+  const { user, accessToken, refreshToken } = await authService.login(req.body.email, req.body.password);
 
-  const { email, password } = req.body;
-  const { user, accessToken, refreshToken } = await authService.login(email, password);
-
-  // Set httpOnly cookie for the refresh token
+  // Refresh token goes in a cookie so client JS can't read it
   res.cookie('refreshToken', refreshToken, cookieOptions);
 
   res.status(200).json({
     success: true,
     message: 'Login successful',
-    token: accessToken,
-    data: { user },
+    data: { user, token: accessToken },
   });
 };
 
-// Refresh access token using the httpOnly cookie refresh token
-export const refreshAccessToken = async (req, res, next) => {
-  const refreshToken = req.cookies?.refreshToken;
-  if (!refreshToken) {
-    return next(new AppError('Refresh token is missing. Please log in again.', 401));
-  }
+export const refreshAccessToken = async (req, res) => {
+  const { refreshToken } = req.cookies;
+  if (!refreshToken) throw new AppError('No refresh token. Please log in again.', 401);
 
-  const newAccessToken = await authService.refresh(refreshToken);
-
-  res.status(200).json({
-    success: true,
-    token: newAccessToken,
-  });
+  const token = await authService.refresh(refreshToken);
+  res.status(200).json({ success: true, data: { token } });
 };
 
-// Logout user by clearing the refresh token cookie
-export const logoutUser = async (req, res, next) => {
+export const logoutUser = async (req, res) => {
   res.clearCookie('refreshToken', {
     httpOnly: true,
     secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
   });
+  res.status(200).json({ success: true, message: 'Logged out successfully' });
+};
 
-  res.status(200).json({
-    success: true,
-    message: 'Logged out successfully',
-  });
-}
-
-// Get current authenticated user details
-export const getMe = async (req, res, next) => {
-  res.status(200).json({
-    success: true,
-    data: {
-      user: req.user,
-    },
-  });
-}
+export const getMe = async (req, res) => {
+  res.status(200).json({ success: true, data: { user: req.user } });
+};

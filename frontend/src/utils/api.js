@@ -4,7 +4,7 @@ import { setCredentials, clearCredentials } from '../store/slices/authSlice.js';
 
 // Configure default base parameters for the server connection
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -42,7 +42,7 @@ api.interceptors.response.use(
           { withCredentials: true }
         );
 
-        const newToken = refreshResponse.data.token;
+        const newToken = refreshResponse.data.data.token;
         setAccessToken(newToken);
         store.dispatch(setCredentials({ token: newToken }));
 
