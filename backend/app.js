@@ -17,6 +17,8 @@ import jobRouter from "./features/jobs/job.routes.js";
 import applicationRouter from "./features/applications/application.routes.js";
 import interviewRouter from "./features/interviews/interview.routes.js";
 import mentorNoteRouter from "./features/mentor-notes/mentorNote.routes.js";
+import analyticsRouter from "./features/analytics/analytics.routes.js";
+import adminRouter from "./features/admin/admin.routes.js";
 
 const app = express();
 
@@ -40,6 +42,8 @@ app.use("/api/jobs", jobRouter);
 app.use("/api/applications", applicationRouter);
 app.use("/api/interviews", interviewRouter);
 app.use("/api/mentor-notes", mentorNoteRouter);
+app.use("/api/analytics", analyticsRouter);
+app.use("/api/admin", adminRouter);
 
 // Health check route
 app.get("/", (req, res) => {

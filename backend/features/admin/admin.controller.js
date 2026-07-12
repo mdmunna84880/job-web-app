@@ -1,0 +1,33 @@
+import * as adminService from './admin.service.js';
+import { updateUserRoleSchema } from './admin.validator.js';
+import { AppError } from '../../utils/AppError.js';
+
+export const listAllUsers = async (req, res, next) => {
+  const result = await adminService.listAllUsers(req.query);
+  res.status(200).json({
+    success: true,
+    data: result.users,
+    pagination: result.pagination,
+  });
+};
+
+export const toggleUserStatus = async (req, res, next) => {
+  const user = await adminService.toggleUserStatus(req.params.id, req.user.id);
+  res.status(200).json({
+    success: true,
+    data: user,
+  });
+};
+
+export const updateUserRole = async (req, res, next) => {
+  const { error } = updateUserRoleSchema.validate(req.body);
+  if (error) {
+    return next(new AppError(error.details[0].message, 400));
+  }
+
+  const user = await adminService.updateUserRole(req.params.id, req.user.id, req.body.role);
+  res.status(200).json({
+    success: true,
+    data: user,
+  });
+};
