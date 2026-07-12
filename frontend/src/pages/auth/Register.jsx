@@ -1,53 +1,52 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext.jsx';
+import { useForm } from 'react-hook-form';
+import { joiResolver } from '@hookform/resolvers/joi';
+import { registerSchema } from '../../utils/validationSchemas.js';
+import api from '../../utils/api.js';
 import Card from '../../components/common/Card.jsx';
 import Input from '../../components/common/Input.jsx';
 import Button from '../../components/common/Button.jsx';
 
 export default function Register() {
-  const { register } = useAuth();
   const navigate = useNavigate();
-
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'candidate',
-  });
-
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
 
-  const handleChange = (e) => {
-    const { id, value } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
-    if (errors[id]) {
-      setErrors((prev) => ({ ...prev, [id]: null }));
-    }
-  };
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: joiResolver(registerSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      role: 'candidate',
+    },
+  });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrors({});
-    setLoading(true);
+  const onSubmit = async (data) => {
     setSuccessMsg('');
-
     try {
-      await register(formData.name, formData.email, formData.password, formData.role);
+      await api.post('/auth/register', data);
       setSuccessMsg('Registration successful! Redirecting to login page...');
       setTimeout(() => {
         navigate('/login');
       }, 2000);
     } catch (err) {
       if (err.response?.status === 400 && err.response.data.errors) {
-        setErrors(err.response.data.errors);
+        const backendErrors = err.response.data.errors;
+        Object.keys(backendErrors).forEach((field) => {
+          setError(field, { type: 'server', message: backendErrors[field] });
+        });
       } else {
-        setErrors({ global: err.response?.data?.message || 'Something went wrong. Please try again.' });
+        setError('root', {
+          type: 'server',
+          message: err.response?.data?.message || 'Something went wrong. Please try again.',
+        });
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -64,26 +63,25 @@ export default function Register() {
         </div>
 
         {successMsg && (
-          <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium rounded-lg">
+          <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium rounded-lg" role="alert">
             {successMsg}
           </div>
         )}
 
-        {errors.global && (
-          <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium rounded-lg">
-            {errors.global}
+        {errors.root && (
+          <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium rounded-lg" role="alert">
+            {errors.root.message}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <Input
             label="Full Name"
             id="name"
             placeholder="John Doe"
             required
-            value={formData.name}
-            onChange={handleChange}
-            error={errors.name}
+            error={errors.name?.message}
+            {...register('name')}
           />
 
           <Input
@@ -92,9 +90,8 @@ export default function Register() {
             type="email"
             placeholder="john@example.com"
             required
-            value={formData.email}
-            onChange={handleChange}
-            error={errors.email}
+            error={errors.email?.message}
+            {...register('email')}
           />
 
           <Input
@@ -103,9 +100,8 @@ export default function Register() {
             type="password"
             placeholder="••••••••"
             required
-            value={formData.password}
-            onChange={handleChange}
-            error={errors.password}
+            error={errors.password?.message}
+            {...register('password')}
           />
 
           <div className="flex flex-col gap-1.5">
@@ -114,18 +110,20 @@ export default function Register() {
             </label>
             <select
               id="role"
-              value={formData.role}
-              onChange={handleChange}
               className="px-3 py-2.5 rounded-lg border border-slate-200 bg-white/50 backdrop-blur-sm text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-smooth"
+              {...register('role')}
             >
-              <option value="candidate">Candidate Student</option>
-              <option value="mentor">Mentor Analyst</option>
-              <option value="admin">Platform Administrator</option>
+              <option value="candidate">Candidate (Job Seeker)</option>
+              <option value="mentor">Mentor / Career Coach</option>
+              <option value="admin">Program Coordinator / Admin</option>
             </select>
+            {errors.role && (
+              <span className="text-xs text-rose-500 font-medium">{errors.role.message}</span>
+            )}
           </div>
 
-          <Button type="submit" disabled={loading} className="mt-2 w-full">
-            {loading ? 'Registering...' : 'Register'}
+          <Button type="submit" disabled={isSubmitting} className="mt-2 w-full">
+            {isSubmitting ? 'Registering...' : 'Register'}
           </Button>
         </form>
 
