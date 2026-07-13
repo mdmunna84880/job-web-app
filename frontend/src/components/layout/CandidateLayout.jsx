@@ -45,7 +45,7 @@ export default function CandidateLayout({ children }) {
       <aside className="hidden md:flex flex-col w-64 bg-slate-900 text-white shadow-xl">
         <div className="p-6 border-b border-slate-800">
           <h2 className="text-xl font-extrabold tracking-tight text-indigo-400 font-sans">
-            Career Tracker
+            Job-Web-App
           </h2>
           <span className="text-xs text-slate-400">Candidate Workspace</span>
         </div>
@@ -93,7 +93,7 @@ export default function CandidateLayout({ children }) {
 
       {/* Mobile Top Navbar */}
       <header className="flex md:hidden items-center justify-between bg-slate-900 text-white p-4 shadow-md">
-        <h2 className="text-lg font-bold text-indigo-400 font-sans">Career Tracker</h2>
+        <h2 className="text-lg font-bold text-indigo-400 font-sans">Job-Web-App</h2>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           className="text-white hover:text-indigo-400 focus:outline-none"

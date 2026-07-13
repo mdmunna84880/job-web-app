@@ -1,4 +1,4 @@
-# Backend Documentation — Placement Readiness & Job Application Tracker
+# Backend Documentation — Job-Web-App
 
 Welcome to the backend API documentation. This guide is designed for frontend developers and new maintainers to get up and running quickly. It details the architecture, local setup, security features, validation structures, and details endpoints across our **5 developmental phases**.
 

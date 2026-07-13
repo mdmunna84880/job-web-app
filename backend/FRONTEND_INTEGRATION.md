@@ -1,4 +1,4 @@
-# Frontend Integration Guide — Placement Readiness & Job Application Tracker
+# Frontend Integration Guide — Job-Web-App
 
 This guide details how to integrate your frontend client (React, Vite, or any other framework) with the backend API. By reading this guide, you will know exactly how to handle session state, configure Axios, handle validation errors, and call every API endpoint with their precise payload structures.
 

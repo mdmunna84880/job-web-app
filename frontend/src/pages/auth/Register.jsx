@@ -84,7 +84,7 @@ export default function Register() {
             Create Account
           </h1>
           <p className="text-sm text-slate-500 mt-2">
-            Get started with Placement Readiness Tracker
+            Get started with Job-Web-App
           </p>
         </div>
 

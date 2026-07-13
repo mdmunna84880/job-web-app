@@ -191,7 +191,7 @@ export default function MentorDashboard() {
       {/* Top Navbar */}
       <header className="flex justify-between items-center bg-slate-900 text-white px-6 py-4 shadow-md">
         <div>
-          <h1 className="text-xl font-bold text-indigo-400">Career Tracker</h1>
+          <h1 className="text-xl font-bold text-indigo-400">Job-Web-App</h1>
           <span className="text-xs text-slate-400">Mentor Console</span>
         </div>
         <div className="flex items-center gap-4">
